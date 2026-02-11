@@ -2,11 +2,9 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
-  Search,
   MapPin,
   Clock,
   CheckCircle2,
@@ -14,13 +12,21 @@ import {
   Timer
 } from "lucide-react";
 
+interface LocationData {
+  address: string;
+  latitude: number;
+  longitude: number;
+  timestamp: string;
+}
+
 interface ComplaintData {
   complaintId: string;
   title: string;
   description: string;
-  location: string;
+  location: LocationData;
   status: "Pending" | "In Progress" | "Resolved";
   createdAt: string;
+  zone?: string;
 }
 
 const TrackComplaint = () => {
@@ -41,16 +47,15 @@ const TrackComplaint = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:5000/api/complaints/${complaintId.trim()}`
+        `https://public-eye-backend.onrender.com/api/complaints/${complaintId.trim()}`
       );
 
       if (!response.ok) {
-        throw new Error();
+        throw new Error("Not found");
       }
 
       const data = await response.json();
       setComplaintData(data);
-
     } catch {
       setError("Complaint not found.");
     } finally {
@@ -79,6 +84,7 @@ const TrackComplaint = () => {
           <h1 className="text-3xl font-bold">Track Your Complaint</h1>
         </div>
 
+        {/* Search Card */}
         <Card>
           <CardHeader>
             <CardTitle>Complaint Lookup</CardTitle>
@@ -102,6 +108,7 @@ const TrackComplaint = () => {
           </CardContent>
         </Card>
 
+        {/* Result Card */}
         {complaintData && (
           <Card>
             <CardHeader>
@@ -118,17 +125,22 @@ const TrackComplaint = () => {
             </CardHeader>
 
             <CardContent className="space-y-4">
+
               <h3 className="font-semibold text-lg">
                 {complaintData.title}
               </h3>
 
               <Separator />
 
+              {/* Location */}
               <div className="flex items-center space-x-2">
                 <MapPin className="h-4 w-4" />
-                <span>{complaintData.location}</span>
+                <span>
+                  {complaintData.location?.address || "Location unavailable"}
+                </span>
               </div>
 
+              {/* Timestamp */}
               <div className="flex items-center space-x-2">
                 <Clock className="h-4 w-4" />
                 <span>
@@ -136,9 +148,17 @@ const TrackComplaint = () => {
                 </span>
               </div>
 
+              {/* Zone */}
+              {complaintData.zone && (
+                <div className="text-sm text-muted-foreground">
+                  Zone: {complaintData.zone}
+                </div>
+              )}
+
               <Separator />
 
               <p>{complaintData.description}</p>
+
             </CardContent>
           </Card>
         )}
