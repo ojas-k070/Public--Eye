@@ -2,14 +2,25 @@ const express = require("express");
 const router = express.Router();
 const Complaint = require("../models/Complaint");
 
-// CREATE complaint
-// CREATE complaint with custom CVC ID
+
+// ==============================
+// CREATE COMPLAINT (Custom CVC ID)
+// ==============================
 router.post("/", async (req, res) => {
   try {
-    const count = await Complaint.countDocuments();
+    // Get last complaint sorted by newest
+    const lastComplaint = await Complaint.findOne().sort({ createdAt: -1 });
 
-    const nextNumber = count + 1;
-    const complaintId = `CVC-${nextNumber.toString().padStart(6, "0")}`;
+    let nextNumber = 1;
+
+    if (lastComplaint && lastComplaint.complaintId) {
+      const lastNumber = parseInt(lastComplaint.complaintId.split("-")[1]);
+      nextNumber = lastNumber + 1;
+    }
+
+    const complaintId = `CVC-${nextNumber
+      .toString()
+      .padStart(6, "0")}`;
 
     const complaint = new Complaint({
       complaintId,
@@ -17,29 +28,37 @@ router.post("/", async (req, res) => {
     });
 
     const savedComplaint = await complaint.save();
+
     res.status(201).json(savedComplaint);
 
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Create complaint error:", error);
+    res.status(500).json({ message: "Failed to create complaint" });
   }
 });
 
 
-// GET all complaints
+// ==============================
+// GET ALL COMPLAINTS
+// ==============================
 router.get("/", async (req, res) => {
   try {
     const complaints = await Complaint.find().sort({ createdAt: -1 });
     res.json(complaints);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Fetch all complaints error:", error);
+    res.status(500).json({ message: "Failed to fetch complaints" });
   }
 });
-// GET complaint by ID
-// GET complaint by custom complaintId
-router.get("/:id", async (req, res) => {
+
+
+// ==============================
+// GET COMPLAINT BY CUSTOM ID
+// ==============================
+router.get("/:complaintId", async (req, res) => {
   try {
     const complaint = await Complaint.findOne({
-      complaintId: req.params.id,
+      complaintId: req.params.complaintId,
     });
 
     if (!complaint) {
@@ -49,10 +68,10 @@ router.get("/:id", async (req, res) => {
     res.json(complaint);
 
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Fetch complaint error:", error);
+    res.status(500).json({ message: "Failed to fetch complaint" });
   }
 });
-
 
 
 module.exports = router;
