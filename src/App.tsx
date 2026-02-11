@@ -12,6 +12,8 @@ import AdminDashboard from "./pages/AdminDashboard";
 import TransparencyDashboard from "./pages/TransparencyDashboard";
 import ConfirmationPage from "./pages/ConfirmationPage";
 import NotFound from "./pages/NotFound";
+import GenerateQR from "./pages/GenerateQR";
+
 
 const queryClient = new QueryClient();
 
@@ -30,6 +32,9 @@ const App = () => (
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/transparency" element={<TransparencyDashboard />} />
             <Route path="/confirmation/:complaintId" element={<ConfirmationPage />} />
+            <Route path="/generate-qr" element={<GenerateQR />} />
+
+            
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
