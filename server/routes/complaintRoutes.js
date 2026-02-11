@@ -50,6 +50,26 @@ router.get("/", async (req, res) => {
     res.status(500).json({ message: "Failed to fetch complaints" });
   }
 });
+// UPDATE complaint status
+router.put("/:id", async (req, res) => {
+  try {
+    const complaint = await Complaint.findOneAndUpdate(
+      { complaintId: req.params.id },
+      { status: req.body.status },
+      { new: true }
+    );
+
+    if (!complaint) {
+      return res.status(404).json({ message: "Complaint not found" });
+    }
+
+    res.json(complaint);
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 
 
 // ==============================
