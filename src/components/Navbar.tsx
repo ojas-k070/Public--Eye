@@ -15,7 +15,7 @@ const Navbar = () => {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-primary to-gov-blue-light">
               <Shield className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="font-bold text-lg">CivicConnect</span>
+            <span className="font-bold text-lg">Public-Eye</span>
           </Link>
           
           <div className="hidden md:flex items-center space-x-6">
