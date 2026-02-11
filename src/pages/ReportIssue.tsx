@@ -9,29 +9,45 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import LocationCard from "@/components/LocationCard";
 import VoiceRecorder from "@/components/VoiceRecorder";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, FileText, CheckCircle2, QrCode } from "lucide-react";
+import { FileText, CheckCircle2, QrCode } from "lucide-react";
+
+/* ✅ Proper Type for GPS Data */
+interface LocationData {
+  address: string;
+  latitude: number;
+  longitude: number;
+  timestamp: string;
+}
 
 const ReportIssue = () => {
   const navigate = useNavigate();
   const routerLocation = useLocation();
   const { toast } = useToast();
 
+  /* ✅ Read zone from QR */
   const queryParams = new URLSearchParams(routerLocation.search);
-  const zone = queryParams.get("zone"); // from QR
+  const zone = queryParams.get("zone");
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    title: string;
+    type: string;
+    description: string;
+    image: File | null;
+    voiceNote: Blob | null;
+  }>({
     title: "",
     type: "",
     description: "",
-    image: null as File | null,
-    voiceNote: null as Blob | null
+    image: null,
+    voiceNote: null
   });
 
-  const [locationData, setLocationData] = useState<any>(null);
+  /* ✅ Typed location state */
+  const [locationData, setLocationData] = useState<LocationData | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (!formData.title || !formData.type || !formData.description) {
@@ -55,33 +71,33 @@ const ReportIssue = () => {
     try {
       setIsSubmitting(true);
 
-      const response = await fetch("http://localhost:5000/api/complaints", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          title: formData.title,
-          description: formData.description,
-          type: formData.type,
-          zone: zone || "Unknown Zone",
-          status: "Pending",
-          location: {
-            address: locationData.address,
-            latitude: locationData.latitude,
-            longitude: locationData.longitude,
-            timestamp: locationData.timestamp
-          }
-        })
-      });
+      const response = await fetch(
+        "https://public-eye-backend.onrender.com/api/complaints",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            title: formData.title,
+            description: formData.description,
+            type: formData.type,
+            zone: zone || "Unknown Zone",
+            status: "Pending",
+            location: locationData
+          })
+        }
+      );
 
       const data = await response.json();
 
-      setIsSubmitting(false);
+      if (!response.ok) {
+        throw new Error(data?.message || "Submission failed");
+      }
 
       toast({
         title: "Complaint Submitted Successfully!",
-        description: `Your Complaint ID is ${data.complaintId}`,
+        description: `Your Complaint ID is ${data.complaintId}`
       });
 
       navigate(`/confirmation/${data.complaintId}`, {
@@ -89,31 +105,32 @@ const ReportIssue = () => {
       });
 
     } catch (error) {
-      setIsSubmitting(false);
       toast({
         title: "Submission Failed",
         description: "Could not connect to server.",
         variant: "destructive"
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setFormData(prev => ({ ...prev, image: file }));
-    }
+    const file = e.target.files?.[0] || null;
+    setFormData(prev => ({ ...prev, image: file }));
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/30 py-6 md:py-8">
       <div className="container mx-auto px-4 max-w-2xl space-y-6">
 
+        {/* Header */}
         <div className="text-center space-y-3">
           <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
             <QrCode className="h-5 w-5 text-primary" />
           </div>
           <h1 className="text-2xl font-bold">QR-Triggered Reporting</h1>
+
           {zone && (
             <p className="text-sm text-muted-foreground">
               Reporting for Zone: <strong>{zone}</strong>
@@ -121,13 +138,12 @@ const ReportIssue = () => {
           )}
         </div>
 
-        {/* GPS Auto Detection */}
-        <LocationCard
-          onLocationChange={(data) => {
-            setLocationData(data);
-          }}
-        />
+        {/* GPS Location */}
+        <LocationCard onLocationChange={(data: LocationData) => {
+          setLocationData(data);
+        }} />
 
+        {/* Form */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
@@ -200,7 +216,7 @@ const ReportIssue = () => {
               </div>
 
               <VoiceRecorder
-                onVoiceRecorded={(blob) =>
+                onVoiceRecorded={(blob: Blob) =>
                   setFormData(prev => ({ ...prev, voiceNote: blob }))
                 }
               />
@@ -213,6 +229,7 @@ const ReportIssue = () => {
           </CardContent>
         </Card>
 
+        {/* Footer Notice */}
         <Card className="bg-accent/5 border-accent/20">
           <CardContent className="p-4 flex items-center space-x-3">
             <CheckCircle2 className="h-4 w-4" />
