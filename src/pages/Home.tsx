@@ -24,13 +24,69 @@ const Home = () => {
   const [timestamp, setTimestamp] = useState<string>("");
 
   useEffect(() => {
-    // Simulate QR code scan and geolocation
     setTimestamp(new Date().toLocaleString());
-    
-    // Mock geolocation (in real app, use navigator.geolocation)
-    setTimeout(() => {
-      setLocation("New Delhi, Delhi, India");
-    }, 2000);
+
+    const updateLocationFromCoords = async (latitude: number, longitude: number) => {
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`,
+          {
+            headers: {
+              // Best-effort identification; some providers prefer a proper UA/Referer
+              "Accept": "application/json"
+            }
+          }
+        );
+        if (!response.ok) {
+          throw new Error("Reverse geocoding failed");
+        }
+        const data = await response.json();
+        const displayName: string | undefined = data?.display_name;
+        if (displayName && displayName.length > 0) {
+          setLocation(displayName);
+        } else {
+          setLocation(`${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
+        }
+      } catch (_err) {
+        setLocation(`${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
+      }
+    };
+
+    const requestGeolocation = () => {
+      if (!("geolocation" in navigator)) {
+        setLocation("Geolocation not supported by this browser");
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          updateLocationFromCoords(latitude, longitude);
+        },
+        (error) => {
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              setLocation("Location permission denied. Please allow access.");
+              break;
+            case error.POSITION_UNAVAILABLE:
+              setLocation("Location unavailable. Try again.");
+              break;
+            case error.TIMEOUT:
+              setLocation("Location request timed out. Try again.");
+              break;
+            default:
+              setLocation("Unable to fetch location.");
+          }
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 60000
+        }
+      );
+    };
+
+    requestGeolocation();
   }, []);
 
   const features = [

@@ -32,6 +32,8 @@ const ReportIssue = () => {
     image: null as File | null,
     voiceNote: null as Blob | null
   });
+  const [detectedLocation, setDetectedLocation] = useState<string>("");
+  const [detectedTimestamp, setDetectedTimestamp] = useState<string>("");
 
   const complaintTypes = [
     { value: "garbage", label: "Garbage Collection", dept: "Sanitation Department" },
@@ -69,8 +71,8 @@ const ReportIssue = () => {
           complaintData: {
             id: complaintId,
             ...formData,
-            location: "New Delhi, Delhi, India",
-            timestamp: new Date().toLocaleString(),
+            location: detectedLocation || "Location unavailable",
+            timestamp: detectedTimestamp || new Date().toLocaleString(),
             status: "Pending",
             department: complaintTypes.find(t => t.value === formData.type)?.dept
           }
@@ -103,8 +105,7 @@ const ReportIssue = () => {
 
           {/* Location Detection */}
           <LocationCard 
-            location="New Delhi, Delhi, India" 
-            timestamp={new Date().toLocaleString()}
+            onLocationChange={(loc, ts) => { setDetectedLocation(loc); if (ts) setDetectedTimestamp(ts); }}
           />
 
           {/* Report Form */}
