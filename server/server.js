@@ -9,6 +9,9 @@ const complaintRoutes = require("./routes/complaintRoutes");
 const app = express();
 const rewardRoutes = require("./routes/rewardRoutes");
 app.use("/api/rewards", rewardRoutes);
+const locationRoutes = require("./routes/locationRoutes");
+app.use("/api/location", locationRoutes);
+
 
 
 // Middleware

@@ -4,13 +4,12 @@ const Complaint = require("../models/Complaint");
 const User = require("../models/User");
 
 
-
 // ================= CREATE COMPLAINT =================
 router.post("/", async (req, res) => {
   try {
-    const count = await Complaint.countDocuments();
-    const nextNumber = count + 1;
-    const complaintId = `CVC-${nextNumber.toString().padStart(6, "0")}`;
+
+    // 🔥 SAFE UNIQUE ID (no duplicates, no countDocuments)
+    const complaintId = `CVC-${Date.now()}`;
 
     // ---------------- PRIORITY LOGIC ----------------
     let priority = "Medium";
@@ -20,29 +19,23 @@ router.post("/", async (req, res) => {
     } else if (req.body.type === "garbage") {
       priority = "Low";
     }
-    // Find or create user
-let user = null;
 
-if (req.body.firebaseUid) {
-  user = await User.findOne({ firebaseUid: req.body.firebaseUid });
+    // ---------------- SAFE USER HANDLING ----------------
+    let user = null;
 
-  if (!user) {
-    user = new User({
-      firebaseUid: req.body.firebaseUid,
-      email: req.body.email || ""
-    });
-    await user.save();
-  }
-}
+    if (req.body.firebaseUid) {
+      user = await User.findOne({
+        firebaseUid: req.body.firebaseUid,
+      });
 
-if (!user) {
-  user = new User({
-    firebaseUid: req.body.firebaseUid,
-    email: req.body.email,
-  });
-  await user.save();
-}
-
+      if (!user) {
+        user = new User({
+          firebaseUid: req.body.firebaseUid,
+          email: req.body.email || "",
+        });
+        await user.save();
+      }
+    }
 
     // ---------------- ESTIMATED RESOLUTION ----------------
     let estimatedDate = new Date();
@@ -56,24 +49,25 @@ if (!user) {
     }
 
     const complaint = new Complaint({
-  complaintId,
-  ...req.body,
-  userId: user ? user._id : null,
-
-  status: "Pending",
-  priority,
-  estimatedResolution: estimatedDate,
-  progressHistory: [
-    { status: "Pending" }
-  ]
-});
-
+      complaintId,
+      ...req.body,
+      userId: user ? user._id : null,
+      status: "Pending",
+      priority,
+      estimatedResolution: estimatedDate,
+      progressHistory: [{ status: "Pending" }],
+    });
 
     const savedComplaint = await complaint.save();
+
     res.status(201).json(savedComplaint);
 
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("🔥 Complaint Creation Error:", error);
+    res.status(500).json({
+      message: error.message,
+      stack: error.stack
+    });
   }
 });
 
@@ -84,6 +78,7 @@ router.get("/", async (req, res) => {
     const complaints = await Complaint.find().sort({ createdAt: -1 });
     res.json(complaints);
   } catch (error) {
+    console.error("🔥 Get All Error:", error);
     res.status(500).json({ message: error.message });
   }
 });
@@ -101,7 +96,9 @@ router.get("/:id", async (req, res) => {
     }
 
     res.json(complaint);
+
   } catch (error) {
+    console.error("🔥 Get By ID Error:", error);
     res.status(500).json({ message: error.message });
   }
 });
@@ -121,17 +118,20 @@ router.put("/:id", async (req, res) => {
     const newStatus = req.body.status;
 
     complaint.status = newStatus;
+
+    // Reward logic (safe)
     if (newStatus === "Resolved" && !complaint.rewardGiven) {
-  const user = await User.findById(complaint.userId);
+      if (complaint.userId) {
+        const user = await User.findById(complaint.userId);
 
-  if (user) {
-    user.points += 10; // reward points
-    await user.save();
-  }
+        if (user) {
+          user.points += 10;
+          await user.save();
+        }
+      }
 
-  complaint.rewardGiven = true;
-}
-
+      complaint.rewardGiven = true;
+    }
 
     // Add to progress history
     complaint.progressHistory.push({
@@ -143,6 +143,7 @@ router.put("/:id", async (req, res) => {
     res.json(complaint);
 
   } catch (error) {
+    console.error("🔥 Status Update Error:", error);
     res.status(500).json({ message: error.message });
   }
 });
@@ -178,6 +179,7 @@ router.post("/:id/feedback", async (req, res) => {
     res.json({ message: "Feedback submitted successfully" });
 
   } catch (error) {
+    console.error("🔥 Feedback Error:", error);
     res.status(500).json({ message: error.message });
   }
 });

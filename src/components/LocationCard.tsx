@@ -19,8 +19,8 @@ const LocationCard = ({ onLocationChange }: LocationCardProps) => {
   const [timestamp, setTimestamp] = useState<string>("");
 
   useEffect(() => {
-    const now = new Date().toLocaleString();
-    setTimestamp(now);
+    const now = new Date().toISOString();
+    setTimestamp(new Date().toLocaleString());
 
     if (!navigator.geolocation) {
       setLocation("Geolocation not supported");
@@ -31,39 +31,31 @@ const LocationCard = ({ onLocationChange }: LocationCardProps) => {
       async (position) => {
         const { latitude, longitude } = position.coords;
 
+        let address = `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
+
         try {
+          // 🔥 CALL YOUR BACKEND INSTEAD OF NOMINATIM
           const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`
+            `https://public-eye-backend.onrender.com/api/location/reverse?lat=${latitude}&lon=${longitude}`
           );
 
-          const data = await response.json();
-          const address =
-            data?.display_name ||
-            `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
-
-          setLocation(address);
-
-          if (onLocationChange) {
-            onLocationChange({
-              address,
-              latitude,
-              longitude,
-              timestamp: now,
-            });
+          if (response.ok) {
+            const data = await response.json();
+            address = data.address || address;
           }
+        } catch (error) {
+          console.error("Reverse geocoding failed:", error);
+        }
 
-        } catch {
-          const fallback = `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
-          setLocation(fallback);
+        setLocation(address);
 
-          if (onLocationChange) {
-            onLocationChange({
-              address: fallback,
-              latitude,
-              longitude,
-              timestamp: now,
-            });
-          }
+        if (onLocationChange) {
+          onLocationChange({
+            address,
+            latitude,
+            longitude,
+            timestamp: now,
+          });
         }
       },
       () => {
