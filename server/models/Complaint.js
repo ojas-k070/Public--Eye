@@ -25,11 +25,10 @@ const complaintSchema = new mongoose.Schema(
       required: true,
     },
 
-   status: {
-  type: String,
-  default: "Pending",
-},
-
+    status: {
+      type: String,
+      default: "Pending",
+    },
 
     department: {
       type: String,
@@ -40,6 +39,11 @@ const complaintSchema = new mongoose.Schema(
       type: String,
       default: "Unknown Zone",
     },
+    userId: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "User"
+},
+
 
     location: {
       address: {
@@ -55,9 +59,54 @@ const complaintSchema = new mongoose.Schema(
         type: String,
       },
     },
+
+    /* ================= NEW FEATURES ================= */
+
+    priority: {
+      type: String,
+      enum: ["Low", "Medium", "High"],
+      default: "Medium",
+    },
+
+    estimatedResolution: {
+      type: Date,
+    },
+
+    progressHistory: [
+      {
+        status: {
+          type: String,
+        },
+        updatedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+
+    feedback: {
+      rating: {
+        type: Number,
+        min: 1,
+        max: 5,
+      },
+      comment: {
+        type: String,
+      },
+      submittedAt: {
+        type: Date,
+      },
+    },
+
+    rewardGiven: {
+      type: Boolean,
+      default: false,
+    },
+
+    /* ================================================= */
   },
   {
-    timestamps: true, // adds createdAt & updatedAt automatically
+    timestamps: true,
   }
 );
 

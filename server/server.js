@@ -3,9 +3,13 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 require("dotenv").config();
 
+
 const complaintRoutes = require("./routes/complaintRoutes");
 
 const app = express();
+const rewardRoutes = require("./routes/rewardRoutes");
+app.use("/api/rewards", rewardRoutes);
+
 
 // Middleware
 app.use(cors());

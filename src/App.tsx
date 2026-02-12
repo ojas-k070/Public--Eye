@@ -13,6 +13,8 @@ import TransparencyDashboard from "./pages/TransparencyDashboard";
 import ConfirmationPage from "./pages/ConfirmationPage";
 import NotFound from "./pages/NotFound";
 import GenerateQR from "./pages/GenerateQR";
+import Rewards from "./pages/Rewards";
+
 
 
 const queryClient = new QueryClient();
@@ -33,6 +35,8 @@ const App = () => (
             <Route path="/transparency" element={<TransparencyDashboard />} />
             <Route path="/confirmation/:complaintId" element={<ConfirmationPage />} />
             <Route path="/generate-qr" element={<GenerateQR />} />
+            <Route path="/rewards" element={<Rewards />} />
+
 
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

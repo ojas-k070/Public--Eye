@@ -1,8 +1,6 @@
 const express = require("express");
 const router = express.Router();
 const Complaint = require("../models/Complaint");
-const User = require("../models/User");
-
 
 
 // ================= CREATE COMPLAINT =================
@@ -20,17 +18,6 @@ router.post("/", async (req, res) => {
     } else if (req.body.type === "garbage") {
       priority = "Low";
     }
-    // Find or create user
-let user = await User.findOne({ firebaseUid: req.body.firebaseUid });
-
-if (!user) {
-  user = new User({
-    firebaseUid: req.body.firebaseUid,
-    email: req.body.email,
-  });
-  await user.save();
-}
-
 
     // ---------------- ESTIMATED RESOLUTION ----------------
     let estimatedDate = new Date();
@@ -44,17 +31,17 @@ if (!user) {
     }
 
     const complaint = new Complaint({
-  complaintId,
-  ...req.body,
-  userId: user._id,
-  status: "Pending",
-  priority,
-  estimatedResolution: estimatedDate,
-  progressHistory: [
-    { status: "Pending" }
-  ]
-});
-
+      complaintId,
+      ...req.body,
+      status: "Pending",
+      priority,
+      estimatedResolution: estimatedDate,
+      progressHistory: [
+        {
+          status: "Pending",
+        },
+      ],
+    });
 
     const savedComplaint = await complaint.save();
     res.status(201).json(savedComplaint);
@@ -108,17 +95,6 @@ router.put("/:id", async (req, res) => {
     const newStatus = req.body.status;
 
     complaint.status = newStatus;
-    if (newStatus === "Resolved" && !complaint.rewardGiven) {
-  const user = await User.findById(complaint.userId);
-
-  if (user) {
-    user.points += 10; // reward points
-    await user.save();
-  }
-
-  complaint.rewardGiven = true;
-}
-
 
     // Add to progress history
     complaint.progressHistory.push({

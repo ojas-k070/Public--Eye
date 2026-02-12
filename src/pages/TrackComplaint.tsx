@@ -19,6 +19,17 @@ interface LocationData {
   timestamp: string;
 }
 
+interface ProgressStep {
+  status: string;
+  updatedAt: string;
+}
+
+interface Feedback {
+  rating: number;
+  comment: string;
+  submittedAt: string;
+}
+
 interface ComplaintData {
   complaintId: string;
   title: string;
@@ -27,6 +38,10 @@ interface ComplaintData {
   status: "Pending" | "In Progress" | "Resolved";
   createdAt: string;
   zone?: string;
+  priority?: "Low" | "Medium" | "High";
+  estimatedResolution?: string;
+  progressHistory?: ProgressStep[];
+  feedback?: Feedback;
 }
 
 const TrackComplaint = () => {
@@ -34,6 +49,9 @@ const TrackComplaint = () => {
   const [complaintData, setComplaintData] = useState<ComplaintData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const [rating, setRating] = useState<number | "">("");
+  const [comment, setComment] = useState("");
 
   const handleSearch = async () => {
     if (!complaintId.trim()) {
@@ -60,6 +78,31 @@ const TrackComplaint = () => {
       setError("Complaint not found.");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const submitFeedback = async () => {
+    if (!rating) {
+      alert("Please select a rating");
+      return;
+    }
+
+    try {
+      await fetch(
+        `https://public-eye-backend.onrender.com/api/complaints/${complaintData?.complaintId}/feedback`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ rating, comment })
+        }
+      );
+
+      alert("Feedback submitted successfully!");
+      window.location.reload();
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -124,7 +167,7 @@ const TrackComplaint = () => {
               </CardDescription>
             </CardHeader>
 
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
 
               <h3 className="font-semibold text-lg">
                 {complaintData.title}
@@ -155,9 +198,70 @@ const TrackComplaint = () => {
                 </div>
               )}
 
+              {/* Priority */}
+              {complaintData.priority && (
+                <div className="text-sm font-medium">
+                  Priority: {complaintData.priority}
+                </div>
+              )}
+
+              {/* Estimated Resolution */}
+              {complaintData.estimatedResolution && (
+                <div className="text-sm text-muted-foreground">
+                  Estimated Resolution:{" "}
+                  {new Date(
+                    complaintData.estimatedResolution
+                  ).toLocaleDateString()}
+                </div>
+              )}
+
               <Separator />
 
               <p>{complaintData.description}</p>
+
+              {/* Progress Timeline */}
+              {complaintData.progressHistory && (
+                <div className="space-y-2">
+                  <h4 className="font-semibold">Progress Timeline</h4>
+                  {complaintData.progressHistory.map((step, index) => (
+                    <div key={index} className="text-sm text-muted-foreground">
+                      {step.status} —{" "}
+                      {new Date(step.updatedAt).toLocaleString()}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Feedback Section */}
+              {complaintData.status === "Resolved" && !complaintData.feedback && (
+                <div className="space-y-3 pt-4">
+                  <h4 className="font-semibold">Submit Feedback</h4>
+
+                  <select
+                    className="border rounded p-2 w-full"
+                    value={rating}
+                    onChange={(e) => setRating(Number(e.target.value))}
+                  >
+                    <option value="">Select Rating</option>
+                    <option value="1">1 - Very Bad</option>
+                    <option value="2">2 - Bad</option>
+                    <option value="3">3 - Average</option>
+                    <option value="4">4 - Good</option>
+                    <option value="5">5 - Excellent</option>
+                  </select>
+
+                  <textarea
+                    placeholder="Write your feedback..."
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    className="border rounded p-2 w-full"
+                  />
+
+                  <Button onClick={submitFeedback}>
+                    Submit Feedback
+                  </Button>
+                </div>
+              )}
 
             </CardContent>
           </Card>

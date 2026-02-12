@@ -60,6 +60,10 @@ const Navbar = () => {
             <Button size="sm" className="bg-gradient-to-r from-primary to-gov-blue-light" asChild>
               <Link to="/report">Report Issue</Link>
             </Button>
+            <Button asChild variant="ghost">
+            <a href="/rewards">Rewards</a>
+            </Button>
+
           </div>
         </div>
       </div>
