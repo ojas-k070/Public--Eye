@@ -21,7 +21,19 @@ router.post("/", async (req, res) => {
       priority = "Low";
     }
     // Find or create user
-let user = await User.findOne({ firebaseUid: req.body.firebaseUid });
+let user = null;
+
+if (req.body.firebaseUid) {
+  user = await User.findOne({ firebaseUid: req.body.firebaseUid });
+
+  if (!user) {
+    user = new User({
+      firebaseUid: req.body.firebaseUid,
+      email: req.body.email || ""
+    });
+    await user.save();
+  }
+}
 
 if (!user) {
   user = new User({
@@ -46,7 +58,8 @@ if (!user) {
     const complaint = new Complaint({
   complaintId,
   ...req.body,
-  userId: user._id,
+  userId: user ? user._id : null,
+
   status: "Pending",
   priority,
   estimatedResolution: estimatedDate,
