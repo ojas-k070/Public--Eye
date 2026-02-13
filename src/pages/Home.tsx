@@ -155,7 +155,7 @@ const Home = () => {
             >
               <Link to="/report">
                 <QrCode className="mr-2 h-4 w-4 md:h-5 md:w-5" />
-                Scan & Report
+                Report issue instantly
               </Link>
             </Button>
             <Button variant="outline" size="lg" className="text-base md:text-lg px-6 md:px-8 py-3 md:py-4 h-auto" asChild>
