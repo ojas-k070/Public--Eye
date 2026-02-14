@@ -22,9 +22,11 @@ app.use(express.json());
 app.use("/api/complaints", complaintRoutes);
 
 // MongoDB Connection
+
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB Connected"))
   .catch(err => console.log("Mongo Error:", err));
+
 
 // Test Route
 app.get("/", (req, res) => {
